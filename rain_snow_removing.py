@@ -1,10 +1,10 @@
 __author__ = 'yizhangzc'
 
-# course:     CV
-# teacher:    lxq
-# author:     zju_cs / Yi Zhang / 21721190
-# mail:       yizhangzc@gmail.com
-# date:       2018/5
+# course:       CV
+# teacher:      lxq
+# author:       zju_cs / Yi Zhang / 21721190
+# mail:         yizhangzc@gmail.com
+# date:         2018/5
 # environment:  ubuntu 14.04 / python 3.5 / numpy 1.14 /
 
 import argparse
@@ -120,7 +120,7 @@ class RSRM( object ):
         random_idx  = np.arange( data.shape[0] )
         np.random.shuffle( random_idx)
         
-        training_data   = data[ random_idx[0: 20000] ]
+        training_data   = data[ random_idx[0: 10000] ]
 
         # import pdb; pdb.set_trace()
         dic = MiniBatchDictionaryLearning( n_components = 1024, alpha = 0.15,
@@ -222,8 +222,10 @@ class RSRM( object ):
         patches         = patches.reshape( -1, patch_size[0], patch_size[1], 3 )
 
         recover         = self.img_splice( patches, self._origin_img_size )
+        recover         = np.where( recover >= 0., recover, 0. )
+        recover         = np.where( recover < 255., recover, 249. )
 
-        self._img_detail_l1 = np.where( recover >= 0., recover, 0. )
+        self._img_detail_l1 = recover
         self._high_freq_l1  = self._high_freq_part - self._img_detail_l1
 
 
@@ -255,10 +257,13 @@ class RSRM( object ):
             filled_non_dynamic[i,j] = np.divide( non_dynamic_sum, non_dynamic_num )
 
         detail = np.concatenate( [ np.expand_dims( utils.guidedfilter(
-            filled_non_dynamic[:,:,c], filled_non_dynamic[:,:,c], 3, 0.0001 ), 2 ) 
+            filled_non_dynamic[:,:,c], filled_non_dynamic[:,:,c], 4, 0.0001 ), 2 ) 
                 for c in range(3) ], axis = 2 ).astype( int )
 
-        self._img_detail_l2 = np.where( detail >= 0., detail, 0. )
+        detail  = np.where( detail >= 0., detail, 0. )
+        detail  = np.where( detail < 255., detail, 249. )
+
+        self._img_detail_l2 = detail
 
         self._high_freq_l2  = np.subtract( self._high_freq_l1, self._img_detail_l2 )
 
@@ -291,21 +296,38 @@ class RSRM( object ):
         V   = np.power( V_ / np.max( V_ ), 1.1 )
 
         detail = np.multiply( np.expand_dims( V, 2 ), self._high_freq_part )
+        detail  = np.where( detail >= 0., detail, 0. )
+        detail  = np.where( detail < 255., detail, 249. )
 
-        self._img_detail_l3 = np.where( detail >= 0, detail, 0. )
+        self._img_detail_l3 = detail
 
     def show_result( self ):
-        self._result = self._low_freq_part + self._img_detail_l1.astype(int) + self._img_detail_l2.astype(int) + self._img_detail_l3.astype(int)
-        
+
+        result = self._low_freq_part + self._img_detail_l1.astype(int) + self._img_detail_l2.astype(int) + self._img_detail_l3.astype(int)
+        result  = np.where( result >= 0, result, 0 )
+        result  = np.where( result <= 255., result, 255 )
+
+        self._result = result
+
+        detail1     = self._low_freq_part.astype(int) + self._img_detail_l1.astype(int)
+        detail1     = np.where( detail1 >= 0, detail1, 0 )
+        detail1     = np.where( detail1 <= 255., detail1, 255 )
+
+        detail2     = self._low_freq_part.astype( int ) + self._img_detail_l1.astype(int) + self._img_detail_l3.astype(int)
+        detail2     = np.where( detail2 >= 0, detail2, 0 )
+        detail2     = np.where( detail2 <= 255., detail2, 255 )
+
+        # import pdb; pdb.set_trace()
+
         misc.imsave( 'detail_l1.png', ( self._img_detail_l1 ).astype(int) )
         misc.imsave( 'detail_l2.png', ( self._img_detail_l2 ).astype(int) )
         misc.imsave( 'detail_l3.png', ( self._img_detail_l3 ).astype(int) )
         misc.imsave( 'low_freq.png',  (self._low_freq_part).astype(int) )
         misc.imsave( 'high_freq.png', (self._high_freq_part).astype(int) )
 
-        misc.imsave( 'low_detail1.png',  self._low_freq_part + self._img_detail_l1.astype(int) )
-        misc.imsave( 'low_detail12.png', self._low_freq_part + self._img_detail_l1.astype(int) + self._img_detail_l3.astype(int) )
-        misc.imsave( 'result.png',       self._result )
+        misc.imsave( 'low_detail1.png',  detail1 )
+        misc.imsave( 'low_detail12.png', detail2 )
+        misc.imsave( 'result.png',  self._result )
 
         # import pdb; pdb.set_trace()
 
