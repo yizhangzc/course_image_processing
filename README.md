@@ -11,8 +11,8 @@
 
 >ubuntu 16.04
 
-python 3.6( scikit-image, numpy, scipy, ... )
+python 3.6( scikit-image, PIL, sklearn, numpy, scipy, ... )
 
 ## run instructions
 
->python main.py -i \$image_path
+>python rain_snow_removing.py -p \$image_path
