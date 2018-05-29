@@ -11,8 +11,10 @@
 
 >ubuntu 16.04
 
-python 3.6( scikit-image, PIL, sklearn, numpy, scipy, ... )
+>python 3.6( scikit-image, PIL, sklearn, numpy, scipy, ... )
 
 ## run instructions
 
 >python rain_snow_removing.py -p \$image_path
+
+>eg: "python rain_snow_removing.py -p ./rain.png"
